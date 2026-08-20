@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.sp
 fun MailDetailsScreen(
     mail: MailItem,
     onBackClick: () -> Unit = {},
-    onNewMailClick: () -> Unit = {}
+    onNewMailClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
 
@@ -75,12 +76,18 @@ fun MailDetailsScreen(
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
+                onTabSelected = { tab ->
+                    selectedTab = tab
+                    when (tab) {
+                        Tab.HOME -> onNavigateToHome()
+                        Tab.INBOX -> onBackClick()
+                    }
+                },
                 onCenterButtonClick = { /* TODO: handle apps/logo click */ }
             )
         },
 
-    ) { padding ->
+        ) { padding ->
 
         Column(
             modifier = Modifier

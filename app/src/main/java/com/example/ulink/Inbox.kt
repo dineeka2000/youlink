@@ -42,6 +42,11 @@ val sampleMails = listOf(
     MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = false),
     MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = true),
     MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Enjoy faster access, better features, and...", "8.20am", isRead = true),
+    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", isRead = true),
+    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = false),
+    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = false),
+    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = true),
+    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Enjoy faster access, better features, and...", "8.20am", isRead = true),
     MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", isRead = true)
 )
 
@@ -49,7 +54,9 @@ val sampleMails = listOf(
 @Composable
 fun InboxScreen(
     onMailClick: (MailItem) -> Unit = {},
-    onNewMailClick: () -> Unit = {}
+    onNewMailClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToNavigation: () -> Unit = {}
 ) {
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
@@ -114,8 +121,13 @@ fun InboxScreen(
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
-                onCenterButtonClick = { /* TODO: handle apps/logo click */ }
+                onTabSelected = { tab ->
+                    selectedTab = tab
+                    if (tab == Tab.HOME) {
+                        onNavigateToHome()
+                    }
+                },
+                onCenterButtonClick = onNavigateToNavigation
             )
         },
         // New Mail button: expanded (with text) first, then fades to icon-only after 2s

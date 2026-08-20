@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.ulink.R
 
 // -------------------- NEW MAIL SCREEN --------------------
@@ -31,7 +32,8 @@ import com.example.ulink.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewMailScreen(
-    onBackClick: () -> Unit = {} // called when back icon is tapped -> go to Inbox
+    onBackClick: () -> Unit = {},       // called when back icon is tapped -> go to Inbox
+    onNavigateToHome: () -> Unit = {}   // called when Home tab is tapped
 ) {
 
     // State for the 3 input fields
@@ -68,11 +70,17 @@ fun NewMailScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF14508C))
             )
         },
-        // Bottom bar: your senior's curved navbar with the floating center logo
+        // Bottom bar
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
+                onTabSelected = { tab ->
+                    selectedTab = tab
+                    when (tab) {
+                        Tab.HOME -> onNavigateToHome()
+                        Tab.INBOX -> onBackClick()
+                    }
+                },
                 onCenterButtonClick = { /* TODO: handle apps/logo click */ }
             )
         }
@@ -115,7 +123,7 @@ fun MailField(label: String, value: String, onValueChange: (String) -> Unit) {
     }
 }
 
-// -------------------- CUSTOM CURVED NAVBAR (from senior's code) --------------------
+// -------------------- CUSTOM CURVED NAVBAR --------------------
 
 // Which tab is currently selected
 enum class Tab { HOME, INBOX }
@@ -185,7 +193,10 @@ fun CustomTabBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp),
+            .height(90.dp) // back to the original compact height — no blank gap above the bar
+            .zIndex(1f),   // draws this whole bar (including the floating logo) ON TOP
+        // of any scrolling content behind it, instead of content
+        // passing in front of the logo when scrolled
         contentAlignment = Alignment.BottomCenter
     ) {
 
