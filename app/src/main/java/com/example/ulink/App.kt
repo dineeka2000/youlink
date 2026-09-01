@@ -61,25 +61,60 @@ private val navSections = listOf(
             "eLearnment System",
             "Finesse Suite",
             "Government Travel",
-
+            "i-FLEET",
+            "My HR Space",
+            "oneworld Training (Initial)",
+            "Properties Work Request",
+            "RSR",
+            "SkyBoard",
+            "QCKS",
+            "ARD - Internet",
+            "Araksha",
+            "Baggage Management System (BMS)",
+            "CargoMax",
+            "Duty Travel",
+            "Exchange Rates",
+            "ForeRunner",
+            "iBUDGET",
+            "iCargo",
+            "MediCash",
+            "Oracle EBS",
+            "RevenuePlus Passenger",
+            "SARA",
+            "UL-Tra",
+            "CRIS"
         )
     ),
     NavSection(
         title = "Corporate Information",
         items = listOf(
-            "About Us",
-            "Leadership Team",
-            "Press Releases",
-            "Annual Reports"
+            "Vision and Mission",
+            "Destinations",
+            "Corporate OChart",
+            "Company Song",
+            "Corporate Contacts",
+            "Corporate Holidays"
         )
     ),
     NavSection(
         title = "Divisions",
         items = listOf(
+            "Aviation College",
+            "Corporate Communications",
+            "Engineering",
+            "Group Assurance Advisory Services",
+            "Logistics and Administration",
+            "Service Delivery",
+            "Cargo",
+            "Corporate Quality",
             "Finance",
-            "Operations",
             "Human Resources",
-            "Technology"
+            "Marketing",
+            "Commercial Operations",
+            "Corporate Safety",
+            "Flight Operations",
+            "Information Technology",
+            "Security Operations"
         )
     )
 )
@@ -91,11 +126,10 @@ private val navSections = listOf(
 @Composable
 fun App(onClose: () -> Unit = {}) {
 
-    // Track which sections are expanded. All start expanded to match the
-    // screenshot (chevrons pointing up).
-    val expandedStates = remember {
-        mutableStateMapOf(*navSections.map { it.title to true }.toTypedArray())
-    }
+    // Track only the currently expanded section's title (null = none expanded).
+    // Tapping a section that's already open collapses it; tapping a different
+    // one switches to it and closes whichever was open before.
+    var expandedSection by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -126,10 +160,10 @@ fun App(onClose: () -> Unit = {}) {
                 navSections.forEach { section ->
                     NavSectionItem(
                         section = section,
-                        expanded = expandedStates[section.title] ?: false,
+                        expanded = expandedSection == section.title,
                         onToggle = {
-                            expandedStates[section.title] =
-                                !(expandedStates[section.title] ?: false)
+                            expandedSection =
+                                if (expandedSection == section.title) null else section.title
                         }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
