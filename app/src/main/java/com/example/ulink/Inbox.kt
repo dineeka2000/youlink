@@ -9,8 +9,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,10 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 
 data class MailItem(
     val sender: String,
@@ -32,15 +32,21 @@ data class MailItem(
     val subject: String,
     val preview: String,
     val time: String,
-    val isRead: MutableState<Boolean>
+    val isRead: MutableState<Boolean>,
+    val hasAttachment: Boolean = false
 )
 
 val sampleMails = listOf(
-    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false)),
-    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false)),
-    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true)),
-    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true)),
-    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true))
+    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
+    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
+    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true), hasAttachment = false),
+    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
+    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
+    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true), hasAttachment = false)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,11 +60,26 @@ fun InboxScreen(
 ) {
     var selectedFilter by remember { mutableStateOf("All") }
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
+    val listState = rememberLazyListState()
+
+    // Gmail-style FAB behavior: expanded (icon + "New Mail" label) while at the top
+    // or scrolling up, collapses to a plain circular icon while scrolling down.
     var fabExpanded by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        delay(2000)
-        fabExpanded = false
+    LaunchedEffect(listState) {
+        var previousIndex = listState.firstVisibleItemIndex
+        var previousOffset = listState.firstVisibleItemScrollOffset
+
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) ->
+                fabExpanded = when {
+                    index == 0 && offset == 0 -> true // always expanded at the very top
+                    index != previousIndex -> index < previousIndex // scrolled a full item — check direction
+                    else -> offset <= previousOffset // same item — compare offsets
+                }
+                previousIndex = index
+                previousOffset = offset
+            }
     }
 
     val filteredMails = if (selectedFilter == "All") {
@@ -123,38 +144,26 @@ fun InboxScreen(
             )
         },
         floatingActionButton = {
-            Crossfade(
-                targetState = fabExpanded,
-                animationSpec = tween(durationMillis = 500)
-            ) { expanded ->
-                if (expanded) {
-                    ExtendedFloatingActionButton(
-                        onClick = onNewMailClick,
-                        containerColor = Color(0xFF14508C),
-                        contentColor = Color.White,
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.newmail),
-                                contentDescription = null,
-                                modifier = Modifier.size(25.dp)
-                            )
-                        },
-                        text = { Text("New Mail") }
+            // Native Material3 morph: smoothly resizes/reshapes between a pill
+            // (icon + "New Mail" text) and a plain circular icon — same motion Gmail uses.
+            ExtendedFloatingActionButton(
+                onClick = onNewMailClick,
+                expanded = fabExpanded,
+                containerColor = Color(0xFF14508C),
+                contentColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 10.dp
+                ),
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.newmail),
+                        contentDescription = if (fabExpanded) null else "New Mail",
+                        modifier = Modifier.size(25.dp)
                     )
-                } else {
-                    FloatingActionButton(
-                        onClick = onNewMailClick,
-                        containerColor = Color(0xFF14508C),
-                        contentColor = Color.White
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.newmail),
-                            contentDescription = "New Mail",
-                            modifier = Modifier.size(25.dp)
-                        )
-                    }
-                }
-            }
+                },
+                text = { Text("New Mail") }
+            )
         }
     )
     { padding ->
@@ -176,8 +185,11 @@ fun InboxScreen(
                 }
             }
 
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(filteredMails) { mail ->
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f)
+            ) {
+                itemsIndexed(filteredMails) { index, mail ->
                     MailRow(
                         mail = mail,
                         onClick = {
@@ -185,6 +197,14 @@ fun InboxScreen(
                             onMailClick(mail)
                         }
                     )
+                    // Divider drawn between rows (skip after the last item)
+                    if (index != filteredMails.lastIndex) {
+                        HorizontalDivider(
+                            color = Color(0xFFD9D9D9),
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(start = 0.dp, end = 0.dp)
+                        )
+                    }
                 }
             }
         }
@@ -213,70 +233,61 @@ private fun CategoryTab(label: String, isSelected: Boolean, onClick: () -> Unit)
 private fun MailRow(mail: MailItem, onClick: () -> Unit) {
     val isRead = mail.isRead.value
 
-    Column {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (!isRead) Color(0xFFEAF3FB) else Color.White)
+            .clickable { onClick() }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(start = 6.dp)
+                .width(4.dp)
+                .height(56.dp)
+                .clip(RoundedCornerShape(50))
+                // All unread indicator lines use this fixed brand blue
+                .background(if (!isRead) Color(0xFF14508C) else Color.Transparent)
+        )
+
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(if (!isRead) Color(0xFFEAF3FB) else Color.White)
-                .clickable { onClick() }
-                .padding(vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.Top
         ) {
             Box(
                 modifier = Modifier
-                    .padding(start = 6.dp)
-                    .width(4.dp)
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(if (!isRead) mail.avatarColor else Color.Transparent)
-            )
-
-            Row(
-                modifier = Modifier
-                    .padding(12.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.Top
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(mail.avatarColor),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(mail.avatarColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(mail.initials, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                }
+                Text(mail.initials, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            }
 
-                Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(10.dp))
 
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = mail.sender,
-                        fontWeight = if (!isRead) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = mail.preview,
-                        color = Color.Gray,
-                        fontSize = 13.sp,
-                        maxLines = 1
-                    )
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = mail.sender,
+                    fontWeight = if (!isRead) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = mail.preview,
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                    maxLines = 1
+                )
+            }
 
-                Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(mail.time, color = Color.Gray, fontSize = 11.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Icon(
-                        painter = painterResource(id = R.drawable.attach),
-                        contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(mail.time, color = Color.Gray, fontSize = 11.sp)
             }
         }
-        HorizontalDivider(color = Color(0xFFEFEFEF))
     }
 }

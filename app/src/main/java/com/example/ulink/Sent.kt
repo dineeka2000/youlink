@@ -61,10 +61,10 @@ fun SentScreen(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     selectedTab = tab
-                    when (tab) {
-                        Tab.HOME -> onNavigateToHome()
-                        Tab.INBOX -> onNavigateToInbox()
-                    }
+//                    when (tab) {
+//                        Tab.HOME -> onNavigateToHome()
+//                        Tab.INBOX -> onNavigateToInbox()
+//                    }
                 },
                 onCenterButtonClick = onNavigateToNavigation
             )
