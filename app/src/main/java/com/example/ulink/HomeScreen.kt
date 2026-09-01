@@ -1,5 +1,6 @@
 package com.example.ulink
 
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,12 +35,14 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
+import androidx.core.view.WindowCompat
 import kotlinx.coroutines.delay
 
 
@@ -85,6 +89,19 @@ fun HomeScreen(
     // Tracks which tab is highlighted in the bottom nav bar (shared Tab enum from NewMail.kt)
     var selectedTab by remember { mutableStateOf(Tab.HOME) }
 
+    // Make status bar icons/text white — the header itself now paints the
+    // blue background behind the status bar (see the header Box below),
+    // since setting window.statusBarColor directly is a no-op on newer
+    // Android versions that force edge-to-edge.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
+
     // Full set shown in the "Featured Links" popup grid.
     // NOTE: replace R.drawable.f4 ... f15 with your actual icon assets.
     val allFeaturedLinks = listOf(
@@ -113,11 +130,14 @@ fun HomeScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             // Plain Box instead of Surface — Surface always clips its content to
             // its shape, which was slicing off the top of the floating center
             // logo button whenever it overflowed above the bar's bounds.
             // Box has no clip, so the logo can pop out above the bar as intended.
+            // CustomTabBar extends its own blue background behind the nav bar,
+            // so no extra padding is needed here.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -139,15 +159,19 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(bottom = innerPadding.calculateBottomPadding())
                 .background(Color.White)
         ) {
 
             // ---- Top header: image background with a dark gradient overlay ----
+            // Extends up behind the status bar (contentWindowInsets above has no
+            // top inset, letting content draw there); the inner Row below gets extra top padding so the
+            // icons/text sit below the notch instead of behind it.
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(90.dp) // reduced from 120.dp
+                    .height(78.dp + statusBarHeight)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.titleb),
@@ -172,7 +196,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(start = 18.dp, top = 20.dp, bottom = 10.dp), // reduced top padding
+                        .padding(start = 18.dp, top = statusBarHeight + 6.dp, bottom = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
@@ -182,8 +206,8 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Hello", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
-                        Text("James Syahir", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text("Hello", color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
+                        Text("James Syahir", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
                     }
 
                     Box(
@@ -205,7 +229,7 @@ fun HomeScreen(
                             painter = painterResource(id = R.drawable.profile),
                             contentDescription = "Profile photo",
                             modifier = Modifier
-                                .size(42.dp) // reduced from 54.dp
+                                .size(49.dp) // reduced from 54.dp
                                 .clip(CircleShape),
                             contentScale = ContentScale.Crop
                         )
@@ -275,7 +299,7 @@ fun HomeScreen(
                                 Image(
                                     painter = painterResource(id = link.imageRes),
                                     contentDescription = link.title,
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(56.dp)
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(link.title, color = Color.White, fontSize = 12.sp)
@@ -304,7 +328,7 @@ fun HomeScreen(
                                     imageVector = Icons.Default.MoreHoriz,
                                     contentDescription = "See More",
                                     tint = Color.White,
-                                    modifier = Modifier.size(28.dp)
+                                    modifier = Modifier.size(40.dp)
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text("See More", color = Color.White, fontSize = 12.sp)
@@ -336,7 +360,7 @@ fun HomeScreen(
                                 )
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            Text(label, color = Color(0xFF1E5FA8), fontSize = 13.sp)
+                            Text(label, color = Color(0xFF1E5FA8), fontSize = 18.sp)
                         }
                     }
                 }
@@ -349,7 +373,7 @@ fun HomeScreen(
 
                 val flightFleetList = listOf(
                     FlightFleetInfo("A33-ALN", "UL225", "12 Jun 2025 22:22 (Local)", "CMB", "Delay (60min)", "DXB", "Delay (60min)"),
-                    FlightFleetInfo("A32-BLN", "UL304", "13 Jun 2025 09:10 (Local)", "CMB", "On Time", "DOH", "On Time"),
+                    FlightFleetInfo("A34-DLN", "UL411", "13 Jun 2025 11:30 (Local)", "CMB", "Delay (45min)", "MLE", "Delay (45min)"),
                     FlightFleetInfo("A35-CLN", "UL517", "14 Jun 2025 15:45 (Local)", "CMB", "Delay (30min)", "SIN", "Delay (30min)")
                 )
 
@@ -360,10 +384,12 @@ fun HomeScreen(
                     items(flightFleetList) { flight ->
                         Box(
                             modifier = Modifier
-                                .width(360.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .border(width = 1.dp, color = Color.LightGray, shape = RoundedCornerShape(16.dp))
-                                .padding(20.dp)
+                                .width(330.dp)
+                                .shadow(elevation = 6.dp, shape = RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .border(width = 1.dp, color = Color.LightGray, shape = RoundedCornerShape(8.dp))
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
                         ) {
                             Column {
                                 // Top row: airline logo + flight code, date on the right
@@ -376,24 +402,20 @@ fun HomeScreen(
                                         Image(
                                             painter = painterResource(id = R.drawable.airline),
                                             contentDescription = "Airline logo",
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-                                                .padding(4.dp)
+                                            modifier = Modifier.size(34.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Text(flight.flightCode, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(flight.flightCode, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                                     }
                                     Text(
                                         flight.dateTime,
-                                        fontSize = 13.sp,
+                                        fontSize = 12.sp,
                                         color = Color.Gray,
                                         maxLines = 1
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.height(20.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
 
                                 // Bottom row: CMB --- (flightline image) --- DXB
                                 Row(
@@ -401,12 +423,12 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text(flight.from, fontWeight = FontWeight.Bold, fontSize = 26.sp)
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(flight.from, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             flight.fromDelay,
                                             color = if (flight.fromDelay == "On Time") Color(0xFF2E7D32) else Color.Red,
-                                            fontSize = 13.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
@@ -414,7 +436,7 @@ fun HomeScreen(
                                     Column(
                                         modifier = Modifier
                                             .weight(1f)
-                                            .padding(horizontal = 8.dp),
+                                            .padding(horizontal = 6.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
                                         Image(
@@ -422,20 +444,20 @@ fun HomeScreen(
                                             contentDescription = "Flight path",
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(20.dp),
-                                            contentScale = ContentScale.FillWidth
+                                                .height(40.dp),
+                                            contentScale = ContentScale.Fit
                                         )
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        Text(flight.flightNumber, fontSize = 15.sp, color = Color.DarkGray)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(flight.flightNumber, fontSize = 13.sp, color = Color.DarkGray)
                                     }
 
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text(flight.to, fontWeight = FontWeight.Bold, fontSize = 26.sp)
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(flight.to, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             flight.toDelay,
                                             color = if (flight.toDelay == "On Time") Color(0xFF2E7D32) else Color.Red,
-                                            fontSize = 13.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
@@ -465,26 +487,25 @@ fun HomeScreen(
                         Box(
                             modifier = Modifier
                                 .width(180.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(width = 1.dp, color = Color.LightGray, shape = RoundedCornerShape(12.dp))
-                                .padding(12.dp)
-                        ) {
+                                .shadow(elevation = 6.dp, shape = RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .border(width = 1.dp, color = Color.LightGray, shape = RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ){
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Image(
                                         painter = painterResource(id = currency.flagRes),
                                         contentDescription = currency.currencyCode,
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(RoundedCornerShape(6.dp)),
-                                        contentScale = ContentScale.Crop
+                                        modifier = Modifier.size(62.dp),
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(currency.currencyCode, fontSize = 16.sp, color = Color.DarkGray)
+                                    Text(currency.currencyCode, fontSize = 19.sp, color = Color.DarkGray)
                                 }
                                 Spacer(modifier = Modifier.height(10.dp))
-                                Text("Conversion Rate", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Text(currency.rate, fontSize = 13.sp, color = Color.DarkGray)
+                                Text("Conversion Rate", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(currency.rate, fontSize = 15.sp, color = Color.DarkGray)
                             }
                         }
                     }
@@ -510,8 +531,10 @@ fun HomeScreen(
                         Row(
                             modifier = Modifier
                                 .width(320.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .border(width = 1.dp, color = Color.LightGray, shape = RoundedCornerShape(14.dp))
+                                .shadow(elevation = 6.dp, shape = RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .border(width = 1.dp, color = Color.LightGray, shape = RoundedCornerShape(8.dp))
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -555,7 +578,7 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(90.dp))
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
@@ -648,7 +671,7 @@ private fun CategoryItem(label: String, imageRes: Int) {
             contentScale = ContentScale.Fit
         )
         Spacer(modifier = Modifier.height(6.dp))
-        Text(label, fontSize = 11.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(label, fontSize = 16.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -667,7 +690,7 @@ private fun SectionHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         if (showViewAll) {
             Text(
                 viewAllLabel,

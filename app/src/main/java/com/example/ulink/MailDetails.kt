@@ -1,8 +1,14 @@
 package com.example.ulink
 
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,26 +19,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Full-detail view of a single mail, opened when a mail row is tapped in Inbox.kt
-@OptIn(ExperimentalMaterial3Api::class) // fixes "experimental API" errors on CenterAlignedTopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MailDetailsScreen(
     mail: MailItem,
+    attachmentUrl: String = "", // NEW: URL of the attached file to download; empty = no real file yet
     onBackClick: () -> Unit = {},
-    onNewMailClick: () -> Unit = {}
+    onNewMailClick: () -> Unit = {},
+    onReplyClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(mail.subject, color = Color.White, fontWeight = FontWeight.Bold) },
-                // Menu icon on the left, same as Inbox screen
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -42,8 +51,6 @@ fun MailDetailsScreen(
                         )
                     }
                 },
-                // Profile icon on the right, same as Inbox screen
-
                 actions = {
                     Box(
                         modifier = Modifier
@@ -56,7 +63,8 @@ fun MailDetailsScreen(
                                     bottomEnd = 0.dp
                                 )
                             )
-                            .background(Color.White),
+                            .background(Color.White)
+                            .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -78,8 +86,7 @@ fun MailDetailsScreen(
                 onTabSelected = { selectedTab = it },
                 onCenterButtonClick = { /* TODO: handle apps/logo click */ }
             )
-        },
-
+        }
     ) { padding ->
 
         Column(
@@ -98,11 +105,8 @@ fun MailDetailsScreen(
                 Text(
                     text = "Enjoy faster access, better features, and a smoother experience right from your phone.",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize = 18.sp
                 )
-
-                //
-
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -113,23 +117,15 @@ fun MailDetailsScreen(
                             .clip(CircleShape)
                             .background(mail.avatarColor),
                         contentAlignment = Alignment.Center
-
-
-                    )
-
-                    {
-                        Text(mail.initials, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-
+                    ) {
+                        Text(mail.initials, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
                     }
 
-
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(mail.sender, fontWeight = FontWeight.Bold)
+                    Text(mail.sender, fontWeight = FontWeight.Bold,fontSize = 16.sp)
                     Spacer(modifier = Modifier.weight(1f))
-                    Text(mail.time, color = Color.Gray, fontSize = 12.sp)
+                    Text(mail.time, color = Color.Gray, fontSize = 16.sp)
                 }
-
-
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -139,15 +135,19 @@ fun MailDetailsScreen(
                             "in risus vehicula, at facilisis lectus posuere.\n\n" +
                             "Nulla pulvinar laoreet massa, ut vehicula magna ultrices ut. " +
                             "Praesent lobortis sagittis neque, non elementum odio eleifend ut.",
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     color = Color.DarkGray
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Attachment chip — same design as before, just made clickable to trigger the download
                 Row(
                     modifier = Modifier
                         .background(Color(0xFFE0E0E0), shape = RoundedCornerShape(6.dp))
+                        .clickable {
+                            downloadAttachment(context, attachmentUrl, "${mail.subject}_attachment")
+                        }
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -155,16 +155,16 @@ fun MailDetailsScreen(
                         painter = painterResource(id = R.drawable.attach),
                         contentDescription = "Attachment",
                         tint = Color.DarkGray,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Attachment", fontSize = 13.sp)
+                    Text("Attachment", fontSize = 15.sp)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("BRs,", fontSize = 13.sp)
-                Text(mail.sender, fontWeight = FontWeight.Bold, fontSize = 13.sp,color = Color.DarkGray,)
+                Text("BRs,", fontSize = 15.sp)
+                Text(mail.sender, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.DarkGray)
             }
 
             Box(
@@ -174,7 +174,7 @@ fun MailDetailsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 OutlinedButton(
-                    onClick = { /* TODO: handle reply */ },
+                    onClick = onReplyClick,
                     border = BorderStroke(1.dp, Color(0xFF176EBC)),
                     modifier = Modifier.width(195.69.dp)
                 ) {
@@ -189,5 +189,30 @@ fun MailDetailsScreen(
                 }
             }
         }
+    }
+}
+
+// Downloads a file using Android's built-in DownloadManager, saving it to the Downloads folder
+private fun downloadAttachment(context: Context, url: String, fileName: String) {
+    if (url.isBlank()) {
+        Toast.makeText(context, "No attachment available to download", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    try {
+        val request = DownloadManager.Request(Uri.parse(url))
+            .setTitle(fileName)
+            .setDescription("Downloading attachment...")
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            .setAllowedOverMetered(true)
+            .setAllowedOverRoaming(true)
+
+        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        downloadManager.enqueue(request)
+
+        Toast.makeText(context, "Downloading attachment...", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }

@@ -126,12 +126,10 @@ private val navSections = listOf(
 @Composable
 fun App(onClose: () -> Unit = {}) {
 
-    // Track which sections are expanded. All start COLLAPSED so the page
-    // opens showing just the 3 main headers (Applications, Corporate
-    // Information, Divisions) — the user taps one to expand it.
-    val expandedStates = remember {
-        mutableStateMapOf(*navSections.map { it.title to false }.toTypedArray())
-    }
+    // Track only the currently expanded section's title (null = none expanded).
+    // Tapping a section that's already open collapses it; tapping a different
+    // one switches to it and closes whichever was open before.
+    var expandedSection by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -162,10 +160,10 @@ fun App(onClose: () -> Unit = {}) {
                 navSections.forEach { section ->
                     NavSectionItem(
                         section = section,
-                        expanded = expandedStates[section.title] ?: false,
+                        expanded = expandedSection == section.title,
                         onToggle = {
-                            expandedStates[section.title] =
-                                !(expandedStates[section.title] ?: false)
+                            expandedSection =
+                                if (expandedSection == section.title) null else section.title
                         }
                     )
                     Spacer(modifier = Modifier.height(8.dp))

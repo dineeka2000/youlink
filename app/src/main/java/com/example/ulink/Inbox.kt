@@ -24,7 +24,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 
-// One mail row's data
 data class MailItem(
     val sender: String,
     val initials: String,
@@ -33,40 +32,39 @@ data class MailItem(
     val subject: String,
     val preview: String,
     val time: String,
-    val isRead: Boolean
+    val isRead: MutableState<Boolean>
 )
 
-// Sample mail data — replace with real data from your backend/database later
 val sampleMails = listOf(
-    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = false),
-    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = false),
-    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Enjoy faster access, better features, and...", "8.20am", isRead = true),
-    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Enjoy faster access, better features, and...", "8.20am", isRead = true),
-    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", isRead = true)
+    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false)),
+    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false)),
+    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true)),
+    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true)),
+    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true))
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InboxScreen(
     onMailClick: (MailItem) -> Unit = {},
-    onNewMailClick: () -> Unit = {}
+    onNewMailClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onNavigateToHome: () -> Unit = {},
+    onNavigateToNavigation: () -> Unit = {}
 ) {
-    var selectedCategory by remember { mutableStateOf("All") }
+    var selectedFilter by remember { mutableStateOf("All") }
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
-
-    // Controls whether the New Mail button shows text or just the icon
     var fabExpanded by remember { mutableStateOf(true) }
 
-    // After 2 seconds, collapse the button to icon-only
     LaunchedEffect(Unit) {
         delay(2000)
         fabExpanded = false
     }
 
-    val filteredMails = if (selectedCategory == "All") {
+    val filteredMails = if (selectedFilter == "All") {
         sampleMails
     } else {
-        sampleMails.filter { it.category == selectedCategory }
+        sampleMails.filter { !it.isRead.value }
     }
 
     Scaffold(
@@ -95,7 +93,8 @@ fun InboxScreen(
                                     bottomEnd = 0.dp
                                 )
                             )
-                            .background(Color.White),
+                            .background(Color.White)
+                            .clickable { onProfileClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -114,11 +113,15 @@ fun InboxScreen(
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
-                onCenterButtonClick = { /* TODO: handle apps/logo click */ }
+                onTabSelected = { tab ->
+                    selectedTab = tab
+                    if (tab == Tab.HOME) {
+                        onNavigateToHome()
+                    }
+                },
+                onCenterButtonClick = onNavigateToNavigation
             )
         },
-        // New Mail button: expanded (with text) first, then fades to icon-only after 2s
         floatingActionButton = {
             Crossfade(
                 targetState = fabExpanded,
@@ -153,7 +156,8 @@ fun InboxScreen(
                 }
             }
         }
-    ) { padding ->
+    )
+    { padding ->
 
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
 
@@ -163,18 +167,24 @@ fun InboxScreen(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("All", "HR", "IT", "SVN").forEach { category ->
+                listOf("All", "Unread").forEach { filter ->
                     CategoryTab(
-                        label = category,
-                        isSelected = category == selectedCategory,
-                        onClick = { selectedCategory = category }
+                        label = filter,
+                        isSelected = filter == selectedFilter,
+                        onClick = { selectedFilter = filter }
                     )
                 }
             }
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(filteredMails) { mail ->
-                    MailRow(mail = mail, onClick = { onMailClick(mail) })
+                    MailRow(
+                        mail = mail,
+                        onClick = {
+                            mail.isRead.value = true
+                            onMailClick(mail)
+                        }
+                    )
                 }
             }
         }
@@ -193,7 +203,7 @@ private fun CategoryTab(label: String, isSelected: Boolean, onClick: () -> Unit)
         Text(
             text = label,
             color = if (isSelected) Color.White else Color.DarkGray,
-            fontSize = 13.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Medium
         )
     }
@@ -201,19 +211,24 @@ private fun CategoryTab(label: String, isSelected: Boolean, onClick: () -> Unit)
 
 @Composable
 private fun MailRow(mail: MailItem, onClick: () -> Unit) {
+    val isRead = mail.isRead.value
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (!mail.isRead) Color(0xFFEAF3FB) else Color.White)
+                .background(if (!isRead) Color(0xFFEAF3FB) else Color.White)
                 .clickable { onClick() }
-                .padding(start = 4.dp)
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
+                    .padding(start = 6.dp)
                     .width(4.dp)
-                    .fillMaxHeight()
-                    .background(if (!mail.isRead) mail.avatarColor else Color.Transparent)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(if (!isRead) mail.avatarColor else Color.Transparent)
             )
 
             Row(
@@ -229,7 +244,7 @@ private fun MailRow(mail: MailItem, onClick: () -> Unit) {
                         .background(mail.avatarColor),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(mail.initials, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(mail.initials, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -237,18 +252,13 @@ private fun MailRow(mail: MailItem, onClick: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = mail.sender,
-                        fontWeight = if (!mail.isRead) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = mail.subject,
-                        fontWeight = if (!mail.isRead) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 13.sp
+                        fontWeight = if (!isRead) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 16.sp
                     )
                     Text(
                         text = mail.preview,
                         color = Color.Gray,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         maxLines = 1
                     )
                 }

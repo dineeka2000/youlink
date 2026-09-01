@@ -1,11 +1,18 @@
 package com.example.ulink
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +31,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.example.ulink.R
 
 // -------------------- NEW MAIL SCREEN --------------------
@@ -34,13 +42,24 @@ fun NewMailScreen(
     onBackClick: () -> Unit = {} // called when back icon is tapped -> go to Inbox
 ) {
 
-    // State for the 3 input fields
+    // State for the 3 input fields + the mail body
     var from by remember { mutableStateOf("") }
     var to by remember { mutableStateOf("") }
     var subject by remember { mutableStateOf("") }
+    var body by remember { mutableStateOf("") }
+
+    // Holds every file/image the user has attached so far
+    val attachments = remember { mutableStateListOf<Uri>() }
 
     // Track which bottom tab is selected
     var selectedTab by remember { mutableStateOf(Tab.HOME) }
+
+    // System file/photo picker — lets the user pick multiple images or documents at once
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        attachments.addAll(uris)
+    }
 
     Scaffold(
         // Top bar: back icon, title, send icon
@@ -48,7 +67,7 @@ fun NewMailScreen(
             CenterAlignedTopAppBar(
                 title = { Text("New Mail", color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { // now navigates back to Inbox
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.back),
                             contentDescription = "Back",
@@ -57,7 +76,18 @@ fun NewMailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: handle send */ }) {
+                    // Attach button — opens the system picker for images/documents, icon size increased
+                    IconButton(onClick = {
+                        filePickerLauncher.launch(arrayOf("image/*", "application/pdf", "*/*"))
+                    }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.attach),
+                            contentDescription = "Attach",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    IconButton(onClick = { /* TODO: handle send, include `attachments` list */ }) {
                         Icon(
                             painter = painterResource(id = R.drawable.send),
                             contentDescription = "Send",
@@ -78,17 +108,85 @@ fun NewMailScreen(
         }
     ) { padding ->
 
-        // Body: From / To / Subject fields, each with a bottom line
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
-                .fillMaxWidth()
+                .fillMaxSize()
         ) {
-            MailField(label = "From :", value = from, onValueChange = { from = it })
-            MailField(label = "To :", value = to, onValueChange = { to = it })
-            MailField(label = "Subject :", value = subject, onValueChange = { subject = it })
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                MailField(label = "From :", value = from, onValueChange = { from = it })
+                MailField(label = "To :", value = to, onValueChange = { to = it })
+                MailField(label = "Subject :", value = subject, onValueChange = { subject = it })
+            }
+
+            // Attached files preview row — only shows if something has been attached
+            if (attachments.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(attachments) { uri ->
+                        AttachmentChip(
+                            fileName = uri.lastPathSegment ?: "Attachment",
+                            onRemove = { attachments.remove(uri) }
+                        )
+                    }
+                }
+            }
+
+            // The actual message-composing area, Gmail-style — takes up the remaining space
+            TextField(
+                value = body,
+                onValueChange = { body = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp),
+                placeholder = { Text("Compose email") },
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent
+                )
+            )
         }
+    }
+}
+
+// One attached file shown as a small removable chip
+@Composable
+private fun AttachmentChip(fileName: String, onRemove: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFFE0E0E0))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.attach),
+            contentDescription = null,
+            tint = Color.DarkGray,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = fileName,
+            fontSize = 12.sp,
+            color = Color.DarkGray,
+            maxLines = 1
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = "✕",
+            fontSize = 12.sp,
+            color = Color.Red,
+            modifier = Modifier.clickable { onRemove() }
+        )
     }
 }
 
@@ -117,11 +215,8 @@ fun MailField(label: String, value: String, onValueChange: (String) -> Unit) {
 
 // -------------------- CUSTOM CURVED NAVBAR (from senior's code) --------------------
 
-// Which tab is currently selected
-enum class Tab { HOME, INBOX }
+enum class Tab { HOME, CHATS, INBOX, NOTIFICATIONS }
 
-// Draws the bar's top edge with an inward notch/curve in the center,
-// so the floating logo circle appears to sit inside a dip.
 class CenterInwardCurveShape(
     private val notchWidthDp: Float = 120f,
     private val notchDepthDp: Float = 33f,
@@ -185,15 +280,14 @@ fun CustomTabBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp),
+            .height(78.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
 
-        // Curved background bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(70.dp)
                 .shadow(elevation = 4.dp, shape = CenterInwardCurveShape())
                 .background(
                     color = Color(0xFF14508C),
@@ -201,13 +295,15 @@ fun CustomTabBar(
                 )
         )
 
-        // Row of tab items on top of the curved bar
+        // 5 equal-width slots: Home | Chats | Apps label | Notifications | Inbox.
+        // Each item centers within its OWN fifth, and the middle slot mirrors
+        // TabItem's icon + spacer height with an invisible Spacer so the "Apps"
+        // text lands on the exact same baseline as the other labels.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(75.dp)
-                .padding(horizontal = 30.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .height(75.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             TabItem(
                 label = "Home",
@@ -216,6 +312,36 @@ fun CustomTabBar(
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(Tab.HOME) }
             )
+
+            TabItem(
+                label = "Chats",
+                iconRes = R.drawable.home,
+                isSelected = selectedTab == Tab.CHATS,
+                modifier = Modifier.weight(1f),
+                onClick = { onTabSelected(Tab.CHATS) }
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Spacer(modifier = Modifier.height(29.dp)) // 25.dp icon + 4.dp spacer, matching TabItem
+                Text(
+                    text = "Apps",
+                    fontSize = 12.sp,
+                    color = Color.White
+                )
+            }
+
+            TabItem(
+                label = "Notifications",
+                iconRes = R.drawable.home,
+                isSelected = selectedTab == Tab.NOTIFICATIONS,
+                modifier = Modifier.weight(1f),
+                onClick = { onTabSelected(Tab.NOTIFICATIONS) }
+            )
+
             TabItem(
                 label = "Inbox",
                 iconRes = R.drawable.mail,
@@ -225,14 +351,20 @@ fun CustomTabBar(
             )
         }
 
-        // Floating center logo button, sitting inside the notch
+        // Floating center logo button — icon floats above the bar.
+        // The "Apps" label now lives in the Row above, aligned with the other tabs.
+        val centerInteractionSource = remember { MutableInteractionSource() }
+
         Box(
             modifier = Modifier
-                .offset(y = (-50).dp)
+                .offset(y = (-38).dp)
                 .size(80.dp)
                 .clip(CircleShape)
                 .background(Color.White)
-                .clickable { onCenterButtonClick() },
+                .clickable(
+                    interactionSource = centerInteractionSource,
+                    indication = null
+                ) { onCenterButtonClick() },
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -240,11 +372,11 @@ fun CustomTabBar(
                 contentDescription = "Apps",
                 modifier = Modifier.size(120.dp)
             )
+
         }
     }
 }
 
-// Single tab item: icon + label, greys out when not selected
 @Composable
 private fun TabItem(
     label: String,
@@ -253,20 +385,25 @@ private fun TabItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+
     Column(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null
+        ) { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(id = iconRes),
             contentDescription = label,
-            modifier = Modifier.size(width = 27.dp, height = 25.dp)
+            modifier = Modifier.size(width = 22.dp, height = 20.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
-            fontSize = 12.sp,
+            fontSize = 10.sp,
             color = if (isSelected) Color.White else Color.White
         )
     }
