@@ -64,14 +64,6 @@ fun SentScreen(
                     when (tab) {
                         Tab.HOME -> onNavigateToHome()
                         Tab.INBOX -> onNavigateToInbox()
-                        Tab.CHATS -> {
-                            // TODO: point this at your actual chats screen once it exists
-                            onNavigateToHome()
-                        }
-                        Tab.NOTIFICATIONS -> {
-                            // TODO: point this at your actual notifications screen once it exists
-                            onNavigateToHome()
-                        }
                     }
                 },
                 onCenterButtonClick = onNavigateToNavigation

@@ -35,6 +35,8 @@ fun ProfileScreen(
     var showSignOutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        // Let the background image draw behind the status bar; bottom bar still gets its own inset
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
@@ -44,10 +46,10 @@ fun ProfileScreen(
         }
     ) { padding ->
 
-        // Background image (bg.png) covers only the top portion, not the whole page
+        // Background image (bg.png) covers the top portion, including the status bar area
         Box(
             modifier = Modifier
-                .padding(padding)
+                .padding(bottom = padding.calculateBottomPadding())
                 .fillMaxSize()
         ) {
             Image(
@@ -55,13 +57,13 @@ fun ProfileScreen(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(280.dp),
+                    .height(300.dp), // expanded top bar background, drawn from the very top edge
                 contentScale = ContentScale.Crop
             )
 
             Column(modifier = Modifier.fillMaxSize()) {
 
-                // "Profile" title over the background image
+                // "Profile" title over the background image — pushed below the status bar
                 Text(
                     text = "Profile",
                     color = Color.White,
@@ -70,6 +72,7 @@ fun ProfileScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .statusBarsPadding()
                         .padding(top = 24.dp)
                 )
 
@@ -80,23 +83,32 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
+                    // Outer box is intentionally NOT clipped, so the camera badge
+                    // can hang over the edge of the circular photo without being cut off
                     Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape)
-                            .background(Color.White),
+                        modifier = Modifier.size(120.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.profile),
-                            contentDescription = "Profile photo",
+                        // Inner circular white backdrop + photo (this one IS clipped)
+                        Box(
                             modifier = Modifier
-                                .size(108.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                                .size(120.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.profile),
+                                contentDescription = "Profile photo",
+                                modifier = Modifier
+                                    .size(108.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
-                        // Small camera icon badge, bottom-right of the photo
+                        // Small camera icon badge, bottom-right of the photo — sits on the
+                        // outer unclipped box so it renders fully on top, not cropped
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -166,8 +178,7 @@ fun ProfileScreen(
                         Icon(
                             painter = painterResource(id = R.drawable.signout),
                             contentDescription = null,
-                            tint =Color(0xFFE91E25),
-                            // color = Color(0xFF176EBC),
+                            tint = Color(0xFFE91E25),
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -177,7 +188,7 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Footer card: version, help text, support line, company logo/name
+                // Footer card: version, help text, support line, company logo
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,11 +212,12 @@ fun ProfileScreen(
                         fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "SriLankan IT Systems",
-                        color = Color(0xFF176EBC),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                    // Company logo image replacing the "SriLankan IT Systems" text
+                    Image(
+                        painter = painterResource(id = R.drawable.slogo),
+                        contentDescription = "Company logo",
+                        modifier = Modifier.height(28.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
 
