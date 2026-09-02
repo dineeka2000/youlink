@@ -112,7 +112,7 @@ fun CustomTabBar(
 
             TabItem(
                 label = "Leave",
-                iconRes = R.drawable.leave,
+                iconRes = R.drawable.leaveicon,
                 isSelected = selectedTab == Tab.CHATS,
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(Tab.CHATS) }
