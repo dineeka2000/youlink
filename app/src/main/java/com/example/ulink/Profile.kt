@@ -40,8 +40,7 @@ fun ProfileScreen(
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
-                onTabSelected = onTabSelected,
-                onCenterButtonClick = { /* TODO: handle apps/logo click */ }
+                onTabSelected = onTabSelected
             )
         }
     ) { padding ->
