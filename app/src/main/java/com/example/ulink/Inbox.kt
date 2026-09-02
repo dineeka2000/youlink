@@ -41,11 +41,6 @@ val sampleMails = listOf(
     MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
     MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
     MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
-    MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true), hasAttachment = false),
-    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
-    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
-    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
-    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
     MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true), hasAttachment = false)
 )
 
