@@ -46,7 +46,7 @@ fun SentScreen(
     onNavigateToNavigation: () -> Unit = {}
 ) {
     // No dedicated "Sent" tab exists in the bottom bar yet, so this just
-    // tracks Home/Inbox taps like the other screens do.
+    // tracks Home/Inbox/Apps taps like the other screens do.
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
 
     Scaffold(
@@ -61,12 +61,13 @@ fun SentScreen(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     selectedTab = tab
-//                    when (tab) {
-//                        Tab.HOME -> onNavigateToHome()
-//                        Tab.INBOX -> onNavigateToInbox()
-//                    }
-                },
-                onCenterButtonClick = onNavigateToNavigation
+                    when (tab) {
+                        Tab.HOME -> onNavigateToHome()
+                        Tab.INBOX -> onNavigateToInbox()
+                        Tab.APPS -> onNavigateToNavigation()
+                        else -> {}
+                    }
+                }
             )
         }
     ) { padding ->

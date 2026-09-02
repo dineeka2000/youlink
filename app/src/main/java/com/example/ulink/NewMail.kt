@@ -3,14 +3,12 @@ package com.example.ulink
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -18,20 +16,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.example.ulink.R
 
 // -------------------- NEW MAIL SCREEN --------------------
@@ -39,7 +29,9 @@ import com.example.ulink.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewMailScreen(
-    onBackClick: () -> Unit = {} // called when back icon is tapped -> go to Inbox
+    onBackClick: () -> Unit = {}, // called when back icon is tapped -> go to Inbox
+    selectedTab: Tab = Tab.INBOX,
+    onTabSelected: (Tab) -> Unit = {}
 ) {
 
     // State for the 3 input fields + the mail body
@@ -50,9 +42,6 @@ fun NewMailScreen(
 
     // Holds every file/image the user has attached so far
     val attachments = remember { mutableStateListOf<Uri>() }
-
-    // Track which bottom tab is selected
-    var selectedTab by remember { mutableStateOf(Tab.HOME) }
 
     // System file/photo picker — lets the user pick multiple images or documents at once
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -98,12 +87,11 @@ fun NewMailScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF14508C))
             )
         },
-        // Bottom bar: your senior's curved navbar with the floating center logo
+        // Bottom bar: shared curved navbar (Home, Chats, Apps, Notifications, Inbox)
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
-                onTabSelected = { selectedTab = it },
-                onCenterButtonClick = { /* TODO: handle apps/logo click */ }
+                onTabSelected = onTabSelected
             )
         }
     ) { padding ->
@@ -210,201 +198,5 @@ fun MailField(label: String, value: String, onValueChange: (String) -> Unit) {
             )
         }
         HorizontalDivider(color = Color.Gray)
-    }
-}
-
-// -------------------- CUSTOM CURVED NAVBAR (from senior's code) --------------------
-
-enum class Tab { HOME, CHATS, INBOX, NOTIFICATIONS }
-
-class CenterInwardCurveShape(
-    private val notchWidthDp: Float = 120f,
-    private val notchDepthDp: Float = 33f,
-    private val shoulderDp: Float = 20f
-) : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        val notchWidth = with(density) { notchWidthDp.dp.toPx() }
-        val notchDepth = with(density) { notchDepthDp.dp.toPx() }
-        val shoulder = with(density) { shoulderDp.dp.toPx() }
-
-        val yTop = 0f
-        val yBottom = size.height
-        val cx = size.width / 2f
-
-        val width = minOf(notchWidth, size.width - 2f)
-        val depth = maxOf(0f, minOf(notchDepth, size.height))
-        val leftX = maxOf(0f, cx - width / 2f)
-        val rightX = minOf(size.width, cx + width / 2f)
-
-        val sMax = maxOf(0f, width / 2f - 1f)
-        val s = maxOf(0f, minOf(shoulder, sMax))
-        val c1 = s
-        val c2 = maxOf(s, width / 4f)
-
-        val path = Path().apply {
-            moveTo(0f, yTop)
-            lineTo(leftX, yTop)
-
-            cubicTo(
-                leftX + c1, yTop,
-                cx - c2, yTop + depth,
-                cx, yTop + depth
-            )
-
-            cubicTo(
-                cx + c2, yTop + depth,
-                rightX - c1, yTop,
-                rightX, yTop
-            )
-
-            lineTo(size.width, yTop)
-            lineTo(size.width, yBottom)
-            lineTo(0f, yBottom)
-            close()
-        }
-
-        return Outline.Generic(path)
-    }
-}
-
-@Composable
-fun CustomTabBar(
-    selectedTab: Tab,
-    onTabSelected: (Tab) -> Unit,
-    onCenterButtonClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(78.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(70.dp)
-                .shadow(elevation = 4.dp, shape = CenterInwardCurveShape())
-                .background(
-                    color = Color(0xFF14508C),
-                    shape = CenterInwardCurveShape()
-                )
-        )
-
-        // 5 equal-width slots: Home | Chats | Apps label | Notifications | Inbox.
-        // Each item centers within its OWN fifth, and the middle slot mirrors
-        // TabItem's icon + spacer height with an invisible Spacer so the "Apps"
-        // text lands on the exact same baseline as the other labels.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(75.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TabItem(
-                label = "Home",
-                iconRes = R.drawable.home,
-                isSelected = selectedTab == Tab.HOME,
-                modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.HOME) }
-            )
-
-            TabItem(
-                label = "Chats",
-                iconRes = R.drawable.home,
-                isSelected = selectedTab == Tab.CHATS,
-                modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.CHATS) }
-            )
-
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Spacer(modifier = Modifier.height(29.dp)) // 25.dp icon + 4.dp spacer, matching TabItem
-                Text(
-                    text = "Apps",
-                    fontSize = 12.sp,
-                    color = Color.White
-                )
-            }
-
-            TabItem(
-                label = "Notifications",
-                iconRes = R.drawable.home,
-                isSelected = selectedTab == Tab.NOTIFICATIONS,
-                modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.NOTIFICATIONS) }
-            )
-
-            TabItem(
-                label = "Inbox",
-                iconRes = R.drawable.mail,
-                isSelected = selectedTab == Tab.INBOX,
-                modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.INBOX) }
-            )
-        }
-
-        // Floating center logo button — icon floats above the bar.
-        // The "Apps" label now lives in the Row above, aligned with the other tabs.
-        val centerInteractionSource = remember { MutableInteractionSource() }
-
-        Box(
-            modifier = Modifier
-                .offset(y = (-38).dp)
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-                .clickable(
-                    interactionSource = centerInteractionSource,
-                    indication = null
-                ) { onCenterButtonClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Apps",
-                modifier = Modifier.size(120.dp)
-            )
-
-        }
-    }
-}
-
-@Composable
-private fun TabItem(
-    label: String,
-    iconRes: Int,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Column(
-        modifier = modifier.clickable(
-            interactionSource = interactionSource,
-            indication = null
-        ) { onClick() },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(id = iconRes),
-            contentDescription = label,
-            modifier = Modifier.size(width = 22.dp, height = 20.dp)
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            color = if (isSelected) Color.White else Color.White
-        )
     }
 }
