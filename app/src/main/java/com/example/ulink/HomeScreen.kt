@@ -86,7 +86,7 @@ fun HomeScreen(
 ) {
     var showFeaturedLinksDialog by remember { mutableStateOf(false) }
 
-    // Tracks which tab is highlighted in the bottom nav bar (shared Tab enum from NewMail.kt)
+    // Tracks which tab is highlighted in the bottom nav bar (shared Tab enum from BottomBar.kt)
     var selectedTab by remember { mutableStateOf(Tab.HOME) }
 
     // Make status bar icons/text white — the header itself now paints the
@@ -147,11 +147,12 @@ fun HomeScreen(
                     selectedTab = selectedTab,
                     onTabSelected = { tab ->
                         selectedTab = tab
-                        if (tab == Tab.INBOX) {
-                            onNavigateToInbox()
+                        when (tab) {
+                            Tab.INBOX -> onNavigateToInbox()
+                            Tab.APPS -> onNavigateToNavigation()
+                            else -> {}
                         }
-                    },
-                    onCenterButtonClick = onNavigateToNavigation
+                    }
                 )
             }
         }

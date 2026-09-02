@@ -136,11 +136,12 @@ fun InboxScreen(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     selectedTab = tab
-                    if (tab == Tab.HOME) {
-                        onNavigateToHome()
+                    when (tab) {
+                        Tab.HOME -> onNavigateToHome()
+                        Tab.APPS -> onNavigateToNavigation()
+                        else -> {}
                     }
-                },
-                onCenterButtonClick = onNavigateToNavigation
+                }
             )
         },
         floatingActionButton = {

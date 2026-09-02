@@ -102,12 +102,28 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Screen.NEW_MAIL -> {
-                    // NewMailScreen's current signature only takes onBackClick —
-                    // it no longer exposes onNavigateToHome or onMailSent, so
-                    // sending a mail here does NOT navigate to Sent anymore.
                     NewMailScreen(
                         onBackClick = {
                             currentScreen = Screen.INBOX
+                        },
+                        selectedTab = Tab.INBOX,
+                        onTabSelected = { tab ->
+                            when (tab) {
+                                Tab.HOME -> currentScreen = Screen.HOME
+                                Tab.INBOX -> currentScreen = Screen.INBOX
+                                Tab.APPS -> {
+                                    previousScreen = Screen.NEW_MAIL
+                                    currentScreen = Screen.NAVIGATION
+                                }
+                                Tab.CHATS -> {
+                                    // TODO: point this at your actual chats screen once it exists
+                                    currentScreen = Screen.HOME
+                                }
+                                Tab.NOTIFICATIONS -> {
+                                    // TODO: point this at your actual notifications screen once it exists
+                                    currentScreen = Screen.HOME
+                                }
+                            }
                         }
                     )
                 }
@@ -123,15 +139,16 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Screen.PROFILE -> {
-                    // ProfileScreen's current signature no longer exposes
-                    // onNavigateToNavigation, so its center logo tap doesn't
-                    // navigate anywhere yet either (see note below).
                     ProfileScreen(
                         selectedTab = Tab.HOME,
                         onTabSelected = { tab ->
                             when (tab) {
                                 Tab.HOME -> currentScreen = Screen.HOME
                                 Tab.INBOX -> currentScreen = Screen.INBOX
+                                Tab.APPS -> {
+                                    previousScreen = Screen.PROFILE
+                                    currentScreen = Screen.NAVIGATION
+                                }
                                 Tab.CHATS -> {
                                     // TODO: point this at your actual chats screen once it exists
                                     currentScreen = Screen.HOME
