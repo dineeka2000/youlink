@@ -1,6 +1,7 @@
 // ---------------- LeaveBalance.kt ----------------
 package com.example.ulink
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -92,21 +94,31 @@ fun LeaveBalanceScreen(
     Scaffold(
         topBar = { LeaveBalanceTopBar(onMenuClick = onMenuClick) },
         bottomBar = {
-            // CustomTabBar only takes selectedTab + onTabSelected — the center
-            // logo button already calls onTabSelected(Tab.APPS) internally.
-            CustomTabBar(
-                selectedTab = selectedTab,
-                onTabSelected = { tab ->
-                    selectedTab = tab
-                    when (tab) {
-                        Tab.HOME -> onNavigateToHome()
-                        Tab.CHATS -> Unit // "Leave" — already on this screen, nothing to navigate to
-                        Tab.APPS -> onNavigateToApps()
-                        Tab.INBOX -> onNavigateToInbox()
-                        Tab.NOTIFICATIONS -> onNavigateToProfile() // "Profile"
+            // Plain Box instead of Surface — Surface always clips its content to
+            // its shape, which would slice off the top of the floating center
+            // logo button whenever it overflows above the bar's bounds.
+            // Box has no clip, so the logo can pop out above the bar as intended.
+            // CustomTabBar extends its own blue background behind the nav bar,
+            // so no extra padding is needed here.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent)
+            ) {
+                CustomTabBar(
+                    selectedTab = selectedTab,
+                    onTabSelected = { tab ->
+                        selectedTab = tab
+                        when (tab) {
+                            Tab.HOME -> onNavigateToHome()
+                            Tab.INBOX -> onNavigateToInbox()
+                            Tab.APPS -> onNavigateToApps()
+                            Tab.NOTIFICATIONS -> onNavigateToProfile() // "Profile"
+                            else -> {} // Tab.CHATS ("Leave") — already on this screen
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         containerColor = Color(0xFFF3F4F6)
     ) { padding ->
@@ -130,8 +142,8 @@ fun LeaveBalanceScreen(
             ActionCard(
                 title = "Apply Leave",
                 subtitle = "Request a new leave for you time off",
-                iconRes = R.drawable.applyleave,
-                blobColor = Color(0xFF6FCF97),
+                iconRes = R.drawable.leave,
+                accentColor = Color(0xFF6FCF97),
                 onClick = onApplyLeaveClick
             )
 
@@ -141,7 +153,7 @@ fun LeaveBalanceScreen(
                 title = "My Leave History",
                 subtitle = "View your pass requests and status",
                 iconRes = R.drawable.myleave,
-                blobColor = Color(0xFFF2994A),
+                accentColor = Color(0xFFF2994A),
                 onClick = onLeaveHistoryClick
             )
         }
@@ -153,11 +165,7 @@ private fun LeaveBalanceTopBar(onMenuClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                Brush.horizontalGradient(
-                    listOf(Color(0xFF0B3D6B), Color(0xFF1E7ED6))
-                )
-            )
+            .background(Color(0xFF14508C))
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         IconButton(
@@ -165,7 +173,7 @@ private fun LeaveBalanceTopBar(onMenuClick: () -> Unit) {
             modifier = Modifier.align(Alignment.CenterStart)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.logo),
+                painter = painterResource(id = R.drawable.menu),
                 contentDescription = "Menu",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
@@ -224,7 +232,7 @@ private fun LeaveBalanceCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFD6D6D6))
+                        .background(Color(0xFFC7C7C7))
                         .padding(horizontal = 10.dp, vertical = 10.dp)
                 ) {
                     Text(
@@ -265,7 +273,7 @@ private fun LeaveBalanceCard(
 
                 // Table rows — built from the user's own LeaveBalanceItem array
                 leaveBalance.forEachIndexed { index, item ->
-                    val rowBackground = if (index % 2 == 0) Color.White else Color(0xFFF7F7F7)
+                    val rowBackground = if (index % 2 == 0) Color.White else Color(0xFFD3D3D3)
 
                     Row(
                         modifier = Modifier
@@ -297,14 +305,14 @@ private fun LeaveBalanceCard(
                         Text(
                             text = "%.2f".format(item.utilized),
                             fontSize = 13.sp,
-                            color = Color(0xFF333333),
+                            color = if (item.pendingApproval > 0) Color(0xFF2E7D32) else Color(0xFF333333),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f)
                         )
                         Text(
                             text = "%.2f".format(item.pendingApproval),
                             fontSize = 13.sp,
-                            color = Color(0xFF333333),
+                            color = if (item.pendingApproval > 0) Color(0xFF2E7D32) else Color(0xFF333333),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f)
                         )
@@ -324,62 +332,68 @@ private fun ActionCard(
     title: String,
     subtitle: String,
     iconRes: Int,
-    blobColor: Color,
+    accentColor: Color,
     onClick: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        // Normal black drop shadow (Card's default elevation shadow, not tinted).
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
             .clickable { onClick() }
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(92.dp)
-        ) {
-            // Quarter-circle color blob peeking out from the bottom-right corner,
-            // clipped by the card's own rounded shape.
+        Column {
             Box(
                 modifier = Modifier
-                    .size(150.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 65.dp, y = 65.dp)
-                    .clip(CircleShape)
-                    .background(blobColor)
-            )
-
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = title,
-                tint = Color.White,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 26.dp)
-                    .size(28.dp)
-            )
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 16.dp, end = 90.dp)
+                    .fillMaxWidth()
+                    .height(92.dp)
             ) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color(0xFF1A1A1A)
+                // The drawable already contains the colored blob + icon together,
+                // so it's placed directly in the corner instead of drawing a
+                // separate colored circle behind a tinted icon.
+                // Crop (not Fit) so the blob fills the card's full height on the
+                // right instead of shrinking down to fit inside a small square.
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = title,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .width(110.dp),
+                    contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = subtitle,
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 16.dp, end = 90.dp)
+                ) {
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color(0xFF1A1A1A)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                }
             }
+
+            // Thick accent stroke along the card's bottom edge — clipped by the
+            // Card's own rounded shape, so its bottom corners stay rounded too.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(accentColor)
+            )
         }
     }
 }
