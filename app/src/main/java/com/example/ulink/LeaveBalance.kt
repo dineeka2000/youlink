@@ -3,6 +3,7 @@ package com.example.ulink
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 
 // ---------- Data model ----------
 
@@ -75,13 +77,32 @@ object LeaveRepository {
 fun LeaveBalanceScreen(
     loggedInUserId: String, // ID of the currently authenticated user — decides which array is shown
     onMenuClick: () -> Unit = {},
-    onApplyLeaveClick: () -> Unit = {},
     onLeaveHistoryClick: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToInbox: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {}, // Tab.NOTIFICATIONS is labeled "Profile" in the bottom bar
     onNavigateToApps: () -> Unit = {}
 ) {
+    // Simple in-place navigation: no NavController needed.
+    // When true, this composable shows ApplyLeaveScreen instead of the leave balance UI.
+    var showApplyLeave by remember { mutableStateOf(false) }
+
+    // Controls the "My Leave" popup (Apply Leave / Short Leave choice) shown
+    // when the user taps the Apply Leave card.
+    var showLeaveOptionsDialog by remember { mutableStateOf(false) }
+
+    if (showApplyLeave) {
+        ApplyLeaveScreen(
+            onBackClick = { showApplyLeave = false },
+            onApplyClick = { formState ->
+                // TODO: submit formState to your repository/API
+                showApplyLeave = false
+            },
+            onResetClick = { /* form resets itself internally */ }
+        )
+        return
+    }
+
     // Real Tab enum (from BottomBar.kt) is: HOME, CHATS, APPS, INBOX, NOTIFICATIONS.
     // The bar's labels are: Home, Leave (Tab.CHATS), Apps, Profile (Tab.NOTIFICATIONS), Inbox.
     // This screen IS the "Leave" destination, so it starts already selected on Tab.CHATS.
@@ -144,7 +165,7 @@ fun LeaveBalanceScreen(
                 subtitle = "Request a new leave for you time off",
                 iconRes = R.drawable.leave,
                 accentColor = Color(0xFF6FCF97),
-                onClick = onApplyLeaveClick
+                onClick = { showLeaveOptionsDialog = true }
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -157,6 +178,21 @@ fun LeaveBalanceScreen(
                 onClick = onLeaveHistoryClick
             )
         }
+    }
+
+    // "My Leave" popup — offers Apply Leave / Short Leave.
+    if (showLeaveOptionsDialog) {
+        LeaveOptionsDialog(
+            onDismiss = { showLeaveOptionsDialog = false },
+            onApplyLeaveSelected = {
+                showLeaveOptionsDialog = false
+                showApplyLeave = true
+            },
+            onShortLeaveSelected = {
+                showLeaveOptionsDialog = false
+                // TODO: hook up a Short Leave flow here when one exists
+            }
+        )
     }
 }
 
@@ -380,8 +416,8 @@ private fun ActionCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = subtitle,
-                        fontSize = 13.sp,
-                        color = Color.Gray
+                        fontSize = 15.sp,
+                        color = Color.Black
                     )
                 }
             }
@@ -395,5 +431,79 @@ private fun ActionCard(
                     .background(accentColor)
             )
         }
+    }
+}
+
+// ---------- "My Leave" popup ----------
+
+/**
+ * The white rounded popup that appears when the Apply Leave card is tapped.
+ * Offers a choice between the full Apply Leave form and Short Leave.
+ */
+@Composable
+private fun LeaveOptionsDialog(
+    onDismiss: () -> Unit,
+    onApplyLeaveSelected: () -> Unit,
+    onShortLeaveSelected: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "My Leave",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = Color(0xFF1A1A1A)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    LeaveOptionButton(
+                        label = "Apply Leave",
+                        onClick = onApplyLeaveSelected,
+                        modifier = Modifier.weight(1f)
+                    )
+                    LeaveOptionButton(
+                        label = "Short Leave",
+                        onClick = onShortLeaveSelected,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LeaveOptionButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val blue = Color(0xFF1B5FC2)
+    Box(
+        modifier = modifier
+            .height(90.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .border(width = 1.dp, color = blue, shape = RoundedCornerShape(10.dp))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = blue,
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            textAlign = TextAlign.Center
+        )
     }
 }

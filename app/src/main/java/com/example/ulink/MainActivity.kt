@@ -176,9 +176,6 @@ class MainActivity : ComponentActivity() {
                             previousScreen = Screen.LEAVE_BALANCE
                             currentScreen = Screen.NAVIGATION
                         },
-                        onApplyLeaveClick = {
-                            // TODO: point this at your Apply Leave screen once it exists
-                        },
                         onLeaveHistoryClick = {
                             // TODO: point this at your Leave History screen once it exists
                         },
