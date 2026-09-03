@@ -111,8 +111,8 @@ fun CustomTabBar(
             )
 
             TabItem(
-                label = "Chats",
-                iconRes = R.drawable.home,
+                label = "Leave",
+                iconRes = R.drawable.leaveicon,
                 isSelected = selectedTab == Tab.CHATS,
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(Tab.CHATS) }
@@ -137,8 +137,8 @@ fun CustomTabBar(
             }
 
             TabItem(
-                label = "Notifications",
-                iconRes = R.drawable.home,
+                label = "Profile",
+                iconRes = R.drawable.picon,
                 isSelected = selectedTab == Tab.NOTIFICATIONS,
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(Tab.NOTIFICATIONS) }

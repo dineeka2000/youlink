@@ -9,7 +9,7 @@ import java.util.Date
 import java.util.Locale
 
 // Simple enum to track which screen is currently showing
-enum class Screen { SPLASH, LOGIN, HOME, INBOX, MAIL_DETAILS, NEW_MAIL, NAVIGATION, PROFILE, SENT, REPLY_MAIL }
+enum class Screen { SPLASH, LOGIN, HOME, INBOX, MAIL_DETAILS, NEW_MAIL, NAVIGATION, PROFILE, SENT, REPLY_MAIL, LEAVE_BALANCE }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,6 +25,11 @@ class MainActivity : ComponentActivity() {
 
             // Holds the mail that was tapped, so MailDetailsScreen knows which one to show
             var selectedMail by remember { mutableStateOf<MailItem?>(null) }
+
+            // ID of the currently logged-in user — drives which leave balance data is shown.
+            // TODO: replace this default with whatever LoginScreen actually returns once
+            // it exposes a real user identifier from your auth flow.
+            var loggedInUserId by remember { mutableStateOf("james.perera") }
 
             when (currentScreen) {
 
@@ -116,12 +121,12 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = Screen.NAVIGATION
                                 }
                                 Tab.CHATS -> {
-                                    // TODO: point this at your actual chats screen once it exists
-                                    currentScreen = Screen.HOME
+                                    // "Leave" tab
+                                    currentScreen = Screen.LEAVE_BALANCE
                                 }
                                 Tab.NOTIFICATIONS -> {
-                                    // TODO: point this at your actual notifications screen once it exists
-                                    currentScreen = Screen.HOME
+                                    // "Profile" tab
+                                    currentScreen = Screen.PROFILE
                                 }
                             }
                         }
@@ -140,7 +145,7 @@ class MainActivity : ComponentActivity() {
 
                 Screen.PROFILE -> {
                     ProfileScreen(
-                        selectedTab = Tab.HOME,
+                        selectedTab = Tab.NOTIFICATIONS,
                         onTabSelected = { tab ->
                             when (tab) {
                                 Tab.HOME -> currentScreen = Screen.HOME
@@ -150,17 +155,42 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = Screen.NAVIGATION
                                 }
                                 Tab.CHATS -> {
-                                    // TODO: point this at your actual chats screen once it exists
-                                    currentScreen = Screen.HOME
+                                    // "Leave" tab
+                                    currentScreen = Screen.LEAVE_BALANCE
                                 }
                                 Tab.NOTIFICATIONS -> {
-                                    // TODO: point this at your actual notifications screen once it exists
-                                    currentScreen = Screen.HOME
+                                    // Already on Profile
                                 }
                             }
                         },
                         onSignOutConfirmed = {
                             currentScreen = Screen.LOGIN
+                        }
+                    )
+                }
+
+                Screen.LEAVE_BALANCE -> {
+                    LeaveBalanceScreen(
+                        loggedInUserId = loggedInUserId,
+                        onMenuClick = {
+                            previousScreen = Screen.LEAVE_BALANCE
+                            currentScreen = Screen.NAVIGATION
+                        },
+                        onLeaveHistoryClick = {
+                            // TODO: point this at your Leave History screen once it exists
+                        },
+                        onNavigateToHome = {
+                            currentScreen = Screen.HOME
+                        },
+                        onNavigateToInbox = {
+                            currentScreen = Screen.INBOX
+                        },
+                        onNavigateToProfile = {
+                            currentScreen = Screen.PROFILE
+                        },
+                        onNavigateToApps = {
+                            previousScreen = Screen.LEAVE_BALANCE
+                            currentScreen = Screen.NAVIGATION
                         }
                     )
                 }
