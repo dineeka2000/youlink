@@ -3,6 +3,7 @@ package com.example.ulink
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,48 +54,84 @@ fun NewMailScreen(
 
     Scaffold(
         // Top bar: back icon, title, send icon
+
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("New Mail", color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.back),
-                            contentDescription = "Back",
-                            tint = Color.White
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(90.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.titleb),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            "New Mail",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                },
-                actions = {
-                    // Attach button — opens the system picker for images/documents, icon size increased
-                    IconButton(onClick = {
-                        filePickerLauncher.launch(arrayOf("image/*", "application/pdf", "*/*"))
-                    }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.attach),
-                            contentDescription = "Attach",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    IconButton(onClick = { /* TODO: handle send, include `attachments` list */ }) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.send),
-                            contentDescription = "Send",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF14508C))
-            )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onBackClick
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.back),
+                                contentDescription = "Back",
+                                tint = Color.White,
+
+                            )
+                        }
+                    },
+                    actions = {
+                        // Attach button — opens the system picker for images/documents, icon size increased
+                        IconButton(onClick = {
+                            filePickerLauncher.launch(arrayOf("image/*", "application/pdf", "*/*"))
+                        }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.attach),
+                                contentDescription = "Attach",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        IconButton(onClick = { /* TODO: handle send, include `attachments` list */ }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.send),
+                                contentDescription = "Send",
+                                tint = Color.White
+                            )
+                        }
+                    },
+
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            }
+
+
+
         },
+
+
         // Bottom bar: shared curved navbar (Home, Chats, Apps, Notifications, Inbox)
+
+
+
         bottomBar = {
             CustomTabBar(
                 selectedTab = selectedTab,
                 onTabSelected = onTabSelected
             )
         }
+
+
     ) { padding ->
 
         Column(

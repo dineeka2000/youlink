@@ -30,49 +30,118 @@ fun MailDetailsScreen(
 ) {
 
     Scaffold(
+
+
+//        topBar = {
+//            CenterAlignedTopAppBar(
+//                title = { Text("Inbox", color = Color.White, fontWeight = FontWeight.Bold) },
+//                navigationIcon = {
+//                    IconButton(onClick =  onBackClick ) {
+//                        Icon(
+//                            painter = painterResource(id = R.drawable.back),
+//                            contentDescription = "Back",
+//                            tint = Color.White,
+//                           // modifier = Modifier.size(30.dp)
+//                        )
+//                    }
+//                },
+//                actions = {
+//                    Box(
+//                        modifier = Modifier
+//                            .size(width = 50.dp, height = 50.dp)
+//                            .clip(
+//                                RoundedCornerShape(
+//                                    topStart = 35.dp,
+//                                    bottomStart = 35.dp,
+//                                    topEnd = 0.dp,
+//                                    bottomEnd = 0.dp
+//                                )
+//                            )
+//                            .background(Color.White)
+//                            .clickable { onProfileClick() },
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        Image(
+//                            painter = painterResource(id = R.drawable.profile),
+//                            contentDescription = "Profile photo",
+//                            modifier = Modifier
+//                                .size(42.dp)
+//                                .clip(CircleShape),
+//                            contentScale = ContentScale.Crop
+//                        )
+//                    }
+//                },
+//                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF14508C))
+//            )
+//        },
+
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(mail.subject, color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.back),
-                            contentDescription = "Back",
-                            tint = Color.White
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(90.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.titleb),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            "Inbox",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
-                },
-                actions = {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 50.dp, height = 50.dp)
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = 35.dp,
-                                    bottomStart = 35.dp,
-                                    topEnd = 0.dp,
-                                    bottomEnd = 0.dp
-                                )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onBackClick
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.back),
+                                contentDescription = "Back",
+                                tint = Color.White,
+                               // modifier = Modifier.size(30.dp)
                             )
-                            .background(Color.White)
-                            .clickable { onProfileClick() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.profile),
-                            contentDescription = "Profile photo",
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF14508C))
-            )
+                        }
+                    },
+//
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent
+                    )
+                )
+            }
+        },
+
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            // Plain Box instead of Surface — Surface always clips its content to
+            // its shape, which was slicing off the top of the floating center
+            // logo button whenever it overflowed above the bar's bounds.
+            // Box has no clip, so the logo can pop out above the bar as intended.
+            // CustomTabBar extends its own blue background behind the nav bar,
+            // so no extra padding is needed here.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent)
+            ) {
+
+            }
         }
-        // bottom nav bar removed
+
+
+
+
+//
     ) { padding ->
+
+        //////////////////////////////
+
+
 
         Column(
             modifier = Modifier
@@ -139,7 +208,7 @@ fun MailDetailsScreen(
                 OutlinedButton(
                     onClick = onReplyClick,
                     border = BorderStroke(1.dp, Color(0xFF176EBC)),
-                    modifier = Modifier.width(400.dp)
+                    modifier = Modifier.width(300.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.arrow),
@@ -147,7 +216,7 @@ fun MailDetailsScreen(
                         tint = Color(0xFF176EBC),
                         modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text("Reply", color = Color(0xFF176EBC))
                 }
             }

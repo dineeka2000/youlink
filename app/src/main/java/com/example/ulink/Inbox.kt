@@ -1,6 +1,7 @@
 // ---------------- Inbox.kt ----------------
 package com.example.ulink
 
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,12 +18,16 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.core.view.WindowCompat
 
 data class MailItem(
     val sender: String,
@@ -41,6 +46,14 @@ val sampleMails = listOf(
     MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
     MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
     MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
+    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
+    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
+    MailItem("Airline Insight", "AI", Color(0xFF14508C), "IT", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFF8B2E2E), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(false), hasAttachment = true),
+    MailItem("Airline Insight", "EC", Color(0xFFC96A6A), "HR", "Airline Insight", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = true),
+    MailItem("Sarah Underwood", "SU", Color(0xFF7B4FA0), "SVN", "Sarah Underwood", "Dear James, Please find the attached files for...", "8.20am", mutableStateOf(true), hasAttachment = false),
     MailItem("IT Security", "IS", Color(0xFF4CAF50), "IT", "IT Security", "Our policies have been updated. Kindly take...", "8.20am", mutableStateOf(true), hasAttachment = false)
 )
 
@@ -51,11 +64,24 @@ fun InboxScreen(
     onNewMailClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
-    onNavigateToNavigation: () -> Unit = {}
+    onNavigateToNavigation: () -> Unit = {},
+    onNavigateToLeave: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf("All") }
     var selectedTab by remember { mutableStateOf(Tab.INBOX) }
     val listState = rememberLazyListState()
+
+    // Same status bar treatment as HomeScreen — the header below now paints
+    // its own background behind the status bar, since setting
+    // window.statusBarColor directly is a no-op on edge-to-edge Android versions.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
 
     // Gmail-style FAB behavior: expanded (icon + "New Mail" label) while at the top
     // or scrolling up, collapses to a plain circular icon while scrolling down.
@@ -84,20 +110,109 @@ fun InboxScreen(
     }
 
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Inbox", color = Color.White, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { /* TODO: handle menu click */ }) {
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent)
+            ) {
+                CustomTabBar(
+                    selectedTab = selectedTab,
+                    onTabSelected = { tab ->
+                        selectedTab = tab
+                        when (tab) {
+                            Tab.HOME -> onNavigateToHome()
+                            Tab.APPS -> onNavigateToNavigation()
+                            Tab.LEAVE -> onNavigateToLeave()
+                            Tab.PROFILE -> onProfileClick()
+                            else -> {}
+                        }
+                    }
+                )
+            }
+        },
+        floatingActionButton = {
+            // Native Material3 morph: smoothly resizes/reshapes between a pill
+            // (icon + "New Mail" text) and a plain circular icon — same motion Gmail uses.
+            ExtendedFloatingActionButton(
+                onClick = onNewMailClick,
+                expanded = fabExpanded,
+                containerColor = Color(0xFF14508C),
+                contentColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 10.dp
+                ),
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.newmail),
+                        contentDescription = if (fabExpanded) null else "New Mail",
+                        modifier = Modifier.size(25.dp)
+                    )
+                },
+                text = { Text("New Mail") }
+            )
+        }
+    ) { innerPadding ->
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = innerPadding.calculateBottomPadding())
+        ) {
+
+            // ---- Header: image background with a dark gradient overlay, same as HomeScreen ----
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(78.dp + statusBarHeight)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.titleb),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.45f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 18.dp, end = 12.dp, top = statusBarHeight + 6.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {  }) {
                         Icon(
                             painter = painterResource(id = R.drawable.menu),
                             contentDescription = "Menu",
                             tint = Color.White,
-                            modifier = Modifier.size(30.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
-                },
-                actions = {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Inbox",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center
+                    )
+
                     Box(
                         modifier = Modifier
                             .size(width = 50.dp, height = 50.dp)
@@ -122,49 +237,8 @@ fun InboxScreen(
                             contentScale = ContentScale.Crop
                         )
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF14508C))
-            )
-        },
-        bottomBar = {
-            CustomTabBar(
-                selectedTab = selectedTab,
-                onTabSelected = { tab ->
-                    selectedTab = tab
-                    when (tab) {
-                        Tab.HOME -> onNavigateToHome()
-                        Tab.APPS -> onNavigateToNavigation()
-                        else -> {}
-                    }
                 }
-            )
-        },
-        floatingActionButton = {
-            // Native Material3 morph: smoothly resizes/reshapes between a pill
-            // (icon + "New Mail" text) and a plain circular icon — same motion Gmail uses.
-            ExtendedFloatingActionButton(
-                onClick = onNewMailClick,
-                expanded = fabExpanded,
-                containerColor = Color(0xFF14508C),
-                contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 6.dp,
-                    pressedElevation = 10.dp
-                ),
-                icon = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.newmail),
-                        contentDescription = if (fabExpanded) null else "New Mail",
-                        modifier = Modifier.size(25.dp)
-                    )
-                },
-                text = { Text("New Mail") }
-            )
-        }
-    )
-    { padding ->
-
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            }
 
             Row(
                 modifier = Modifier

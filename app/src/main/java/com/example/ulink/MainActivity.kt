@@ -60,6 +60,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onNavigateToProfile = {
                             currentScreen = Screen.PROFILE
+                        },
+                                onNavigateToLeave = {
+                            currentScreen = Screen.LEAVE_BALANCE
                         }
                     )
                 }
@@ -82,6 +85,9 @@ class MainActivity : ComponentActivity() {
                         onNavigateToNavigation = {
                             previousScreen = Screen.INBOX
                             currentScreen = Screen.NAVIGATION
+                        },
+                        onNavigateToLeave = {
+                            currentScreen = Screen.LEAVE_BALANCE
                         }
                     )
                 }
@@ -120,12 +126,10 @@ class MainActivity : ComponentActivity() {
                                     previousScreen = Screen.NEW_MAIL
                                     currentScreen = Screen.NAVIGATION
                                 }
-                                Tab.CHATS -> {
-                                    // "Leave" tab
+                                Tab.LEAVE -> {
                                     currentScreen = Screen.LEAVE_BALANCE
                                 }
-                                Tab.NOTIFICATIONS -> {
-                                    // "Profile" tab
+                                Tab.PROFILE -> {
                                     currentScreen = Screen.PROFILE
                                 }
                             }
@@ -145,7 +149,7 @@ class MainActivity : ComponentActivity() {
 
                 Screen.PROFILE -> {
                     ProfileScreen(
-                        selectedTab = Tab.NOTIFICATIONS,
+                        selectedTab = Tab.PROFILE,
                         onTabSelected = { tab ->
                             when (tab) {
                                 Tab.HOME -> currentScreen = Screen.HOME
@@ -154,11 +158,10 @@ class MainActivity : ComponentActivity() {
                                     previousScreen = Screen.PROFILE
                                     currentScreen = Screen.NAVIGATION
                                 }
-                                Tab.CHATS -> {
-                                    // "Leave" tab
+                                Tab.LEAVE -> {
                                     currentScreen = Screen.LEAVE_BALANCE
                                 }
-                                Tab.NOTIFICATIONS -> {
+                                Tab.PROFILE -> {
                                     // Already on Profile
                                 }
                             }
@@ -176,9 +179,9 @@ class MainActivity : ComponentActivity() {
                             previousScreen = Screen.LEAVE_BALANCE
                             currentScreen = Screen.NAVIGATION
                         },
-                        onApplyLeaveClick = {
-                            // TODO: point this at your Apply Leave screen once it exists
-                        },
+//                        onApplyLeaveClick = {
+//                            // TODO: point this at your Apply Leave screen once it exists
+//                        },
                         onLeaveHistoryClick = {
                             // TODO: point this at your Leave History screen once it exists
                         },

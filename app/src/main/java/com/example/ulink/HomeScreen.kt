@@ -82,7 +82,8 @@ data class ArticleInfo(
 fun HomeScreen(
     onNavigateToInbox: () -> Unit = {},
     onNavigateToNavigation: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToLeave: () -> Unit = {}
 ) {
     var showFeaturedLinksDialog by remember { mutableStateOf(false) }
 
@@ -148,9 +149,11 @@ fun HomeScreen(
                     onTabSelected = { tab ->
                         selectedTab = tab
                         when (tab) {
+                            Tab.HOME -> {} // already here
                             Tab.INBOX -> onNavigateToInbox()
                             Tab.APPS -> onNavigateToNavigation()
-                            else -> {}
+                            Tab.LEAVE -> onNavigateToLeave()
+                            Tab.PROFILE -> onNavigateToProfile()
                         }
                     }
                 )
