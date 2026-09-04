@@ -25,7 +25,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-enum class Tab { HOME, CHATS, APPS, INBOX, NOTIFICATIONS }
+// Matches the 5 bottom nav tabs in order: Home, Leave, Apps (center), Profile, Inbox.
+enum class Tab { HOME, LEAVE, APPS, PROFILE, INBOX }
 
 class CenterInwardCurveShape(
     private val notchWidthDp: Float = 120f,
@@ -93,7 +94,7 @@ fun CustomTabBar(
                 )
         )
 
-        // 5 equal-width slots: Home | Chats | Apps | Notifications | Inbox.
+        // 5 equal-width slots: Home | Leave | Apps | Profile | Inbox.
         // The middle (Apps) slot is now clickable and selectable, same as the others,
         // it just has no icon of its own here since the floating logo above serves that role.
         Row(
@@ -111,11 +112,11 @@ fun CustomTabBar(
             )
 
             TabItem(
-                label = "Chats",
-                iconRes = R.drawable.home,
-                isSelected = selectedTab == Tab.CHATS,
+                label = "Leave",
+                iconRes = R.drawable.leaveicon,
+                isSelected = selectedTab == Tab.LEAVE,
                 modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.CHATS) }
+                onClick = { onTabSelected(Tab.LEAVE) }
             )
 
             Column(
@@ -136,13 +137,6 @@ fun CustomTabBar(
                 )
             }
 
-            TabItem(
-                label = "Notifications",
-                iconRes = R.drawable.home,
-                isSelected = selectedTab == Tab.NOTIFICATIONS,
-                modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.NOTIFICATIONS) }
-            )
 
             TabItem(
                 label = "Inbox",
@@ -150,6 +144,14 @@ fun CustomTabBar(
                 isSelected = selectedTab == Tab.INBOX,
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(Tab.INBOX) }
+            )
+
+            TabItem(
+                label = "Profile",
+                iconRes = R.drawable.picon,
+                isSelected = selectedTab == Tab.PROFILE,
+                modifier = Modifier.weight(1f),
+                onClick = { onTabSelected(Tab.PROFILE) }
             )
         }
 
