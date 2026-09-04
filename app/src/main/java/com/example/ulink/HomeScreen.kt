@@ -225,8 +225,8 @@ fun HomeScreen(
                                     bottomEnd = 0.dp
                                 )
                             )
-                            .background(Color.White)
-                            .clickable { onNavigateToProfile() },
+                            .background(Color.White),
+
                         contentAlignment = Alignment.Center
                     ) {
                         Image(

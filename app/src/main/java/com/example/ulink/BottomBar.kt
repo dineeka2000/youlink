@@ -137,13 +137,6 @@ fun CustomTabBar(
                 )
             }
 
-            TabItem(
-                label = "Profile",
-                iconRes = R.drawable.picon,
-                isSelected = selectedTab == Tab.PROFILE,
-                modifier = Modifier.weight(1f),
-                onClick = { onTabSelected(Tab.PROFILE) }
-            )
 
             TabItem(
                 label = "Inbox",
@@ -151,6 +144,14 @@ fun CustomTabBar(
                 isSelected = selectedTab == Tab.INBOX,
                 modifier = Modifier.weight(1f),
                 onClick = { onTabSelected(Tab.INBOX) }
+            )
+
+            TabItem(
+                label = "Profile",
+                iconRes = R.drawable.picon,
+                isSelected = selectedTab == Tab.PROFILE,
+                modifier = Modifier.weight(1f),
+                onClick = { onTabSelected(Tab.PROFILE) }
             )
         }
 
