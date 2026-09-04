@@ -1,6 +1,7 @@
 package com.example.ulink
 
 import android.app.DatePickerDialog
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import java.util.Calendar
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.composed
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 
 // ---------- Colors ----------
 private val HeaderBlueStart = Color(0xFF1B5FC2)
@@ -61,24 +64,52 @@ fun ApplyLeaveScreen(
             .background(Color(0xFFF2F2F2))
     ) {
         // ---------- Header ----------
+//        Box(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .background(
+//                    Brush.horizontalGradient(listOf(HeaderBlueStart, HeaderBlueEnd))
+//                )
+//                .padding(top = 48.dp, bottom = 20.dp)
+//        ) {
+//            IconButton(
+//                onClick = onBackClick,
+//                modifier = Modifier.align(Alignment.CenterStart)
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Default.ArrowBack,
+//                    contentDescription = "Back",
+//                    tint = Color.White
+//                )
+//            }
+
+        val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(listOf(HeaderBlueStart, HeaderBlueEnd))
-                )
-                .padding(top = 48.dp, bottom = 20.dp)
+                .height(78.dp + statusBarHeight)
         ) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.titleb),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.45f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+
             Text(
                 text = "Apply Leave",
                 color = Color.White,
@@ -87,6 +118,20 @@ fun ApplyLeaveScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.align(Alignment.Center)
             )
+
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.align(Alignment.CenterStart)
+            )  {
+                    Icon(
+                        painter = painterResource(id = R.drawable.back),
+                        contentDescription = "Back",
+                        tint = Color.White,
+                        // modifier = Modifier.size(30.dp)
+                    )
+                }
+
+
         }
 
         // ---------- Form Card ----------
